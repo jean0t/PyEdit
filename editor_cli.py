@@ -43,13 +43,20 @@ class Cursor:
 			self.row += 1
 			self._clamp_col(buffer)
 	
-	def left(self):
+	def left(self, buffer):
 		if self.column > 0:
 			self.column -= 1
+		elif self.row > 0:
+			self.row -= 1
+			self.column = len(buffer[self.row])
 	
 	def right(self, buffer):
 		if self.column < len(buffer[self.row]):
 			self.column += 1
+
+		elif self.row < len(buffer) - 1:
+			self.row += 1
+			self.column = 0
 	
 	def _clamp_col(self, buffer):
 		self.column = min(self._column_hint, len(buffer[self.row]))
@@ -90,7 +97,7 @@ def main(stdscr):
 			cursor.down(buffer)
 		
 		elif key == 'KEY_LEFT':
-			cursor.left()
+			cursor.left(buffer)
 
 		elif key == 'KEY_RIGHT':
 			cursor.right(buffer)
