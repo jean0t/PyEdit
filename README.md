@@ -14,9 +14,6 @@ PyEdit is a basic command-line text editor written in Python. It allows you to l
 
 ## TODO
 * Implement write and save functionality 📝
-* Add support for multiple file formats
-* Improve navigation and scrolling
-* Add syntax highlighting for programming languages
 
 ## Getting Started
 ### Clone the repository
