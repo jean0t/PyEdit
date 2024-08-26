@@ -37,19 +37,19 @@ class Cursor:
 		if self.row > 0:
 			self.row -= 1
 			self._clamp_col(buffer)
-	
+
 	def down(self, buffer):
 		if self.row < len(buffer) - 1: 
 			self.row += 1
 			self._clamp_col(buffer)
-	
+
 	def left(self, buffer):
 		if self.column > 0:
 			self.column -= 1
 		elif self.row > 0:
 			self.row -= 1
 			self.column = len(buffer[self.row])
-	
+
 	def right(self, buffer):
 		if self.column < len(buffer[self.row]):
 			self.column += 1
@@ -57,16 +57,34 @@ class Cursor:
 		elif self.row < len(buffer) - 1:
 			self.row += 1
 			self.column = 0
-	
+
 	def _clamp_col(self, buffer):
 		self.column = min(self._column_hint, len(buffer[self.row]))
 
-class Window: # It exists to provide a screen dinamically
+class Window:
+	# It exists to provide a screen dinamically
 	# Last time it was crashing by not having enough space lol
 	# it solves the problem
-	def __init__(self, n_rows, n_columns):
+	def __init__(self, n_rows, n_columns, row=0, column=0):
 		self.n_rows = n_rows
 		self.n_columns = n_columns
+		self.row = row
+		self.column = column
+
+	def translate(self, cursor):
+		return cursor.row - self.row, cursor.column - self.column
+
+	@property
+	def bottom(self):
+		return self.row + self.n_rows - 1
+
+	def up(self, cursor):
+		if cursor.row == self.row - 1 and self.row > 0:
+			self.row -= 1
+
+	def down(self, buffer, cursor):
+		if cursor.row == self.bottom + 1 and self.bottom < len(buffer) - 1:
+			self.row += 1
 
 def main(stdscr):
 	parser = argparse.ArgumentParser()
@@ -75,14 +93,14 @@ def main(stdscr):
 
 	with open(args.filename) as f:
 		buffer = f.readlines()
-	
+
 	window = Window(curses.LINES - 1, curses.COLS - 1)
 	cursor = Cursor()
 	while True:
 		stdscr.erase()
-		for row, line in enumerate(buffer[:window.n_rows]):
-			stdscr.addstr(row, 0, line[:window.n_columns])
-		stdscr.move(cursor.row, cursor.column)
+		for row, line in enumerate(buffer[window.row:window.row + window.n_rows]):
+			stdscr.addstr(row, 0, line)
+		stdscr.move(*window.translate(cursor))
 
 		key = stdscr.getkey() # self explanatory but
 		# it will be the menu to add functionality based
@@ -92,15 +110,19 @@ def main(stdscr):
 
 		elif key == 'KEY_UP':
 			cursor.up(buffer)
+			window.up(cursor)
 
 		elif key == 'KEY_DOWN':
 			cursor.down(buffer)
-		
+			window.down(buffer, cursor)
+
 		elif key == 'KEY_LEFT':
 			cursor.left(buffer)
+			window.up(cursor)
 
 		elif key == 'KEY_RIGHT':
 			cursor.right(buffer)
+			window.down(buffer, cursor)
 
 if __name__ == '__main__':
 	curses.wrapper(main) # calls the function and shows exceptions
