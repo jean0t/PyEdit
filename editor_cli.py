@@ -39,7 +39,7 @@ class Cursor:
 			self._clamp_col(buffer)
 
 	def down(self, buffer):
-		if self.row < len(buffer) - 1: 
+		if self.row < buffer.bottom: 
 			self.row += 1
 			self._clamp_col(buffer)
 
@@ -54,7 +54,7 @@ class Cursor:
 		if self.column < len(buffer[self.row]):
 			self.column += 1
 
-		elif self.row < len(buffer) - 1:
+		elif self.row < buffer.bottom:
 			self.row += 1
 			self.column = 0
 
@@ -87,8 +87,42 @@ class Window:
 			self.row -= 1
 
 	def down(self, buffer, cursor):
-		if cursor.row == self.bottom + 1 and self.bottom < len(buffer) - 1:
+		if cursor.row == self.bottom + 1 and self.bottom < buffer.bottom:
 			self.row += 1
+
+class Buffer:
+	# let's actually modify the text it receives
+	# but firstly we actually need that class
+	def __init__(self, lines):
+		self.lines = lines
+
+	def __len__(self):
+		return len(self.lines)
+
+	def __getitem__(self, index):
+		return self.lines[index]
+
+	@property
+	def bottom(self):
+		return len(self) - 1
+
+	def insert(self, cursor, string):
+		row, column = cursor.row, cursor.column
+		current = self.lines.pop(row)
+		new = current[:column] + string + current[column:]
+		self.lines.insert(row, new)
+
+	def split(self, cursor):
+		row, column = cursor.row, cursor.column
+		current = self.lines.pop(row)
+		self.lines.insert(row, current[:column])
+		self.lines.insert(row + 1, current[column:])
+
+def right(window, buffer, cursor):
+	cursor.right(buffer)
+	window.down(buffer, cursor)
+	window.horizontal_scroll(cursor)
+
 
 def main(stdscr):
 	parser = argparse.ArgumentParser()
@@ -96,7 +130,7 @@ def main(stdscr):
 	args = parser.parse_args()
 
 	with open(args.filename) as f:
-		buffer = f.readlines()
+		buffer = Buffer(f.read().splitlines())
 
 	window = Window(curses.LINES - 1, curses.COLS - 1)
 	cursor = Cursor()
@@ -133,9 +167,16 @@ def main(stdscr):
 			window.horizontal_scroll(cursor)
 
 		elif key == 'KEY_RIGHT':
-			cursor.right(buffer)
-			window.down(buffer, cursor)
-			window.horizontal_scroll(cursor)
+			right(window, buffer, cursor)
+
+		elif key == '\n':
+			buffer.split(cursor)
+			right(window, buffer, cursor)
+
+		else:
+			buffer.insert(cursor, key)
+			for _ in key:
+				right(window, buffer, cursor)
 
 if __name__ == '__main__':
 	curses.wrapper(main) # calls the function and shows exceptions
