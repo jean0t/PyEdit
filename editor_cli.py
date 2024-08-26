@@ -9,10 +9,14 @@
 # or modify the code, but keep it open source for others, as GPL3 says so
 
 
-import curses, sys, argparse 
+import curses, sys, argparse
 # curses is the most important
 # sys will deal with exits only
 # and argparse will deal with files to edit 
+
+from pathlib import Path
+# Path is used to get the path of the file
+
 
 class Cursor:
 	# It should make the user move around the content
@@ -112,6 +116,18 @@ class Buffer:
 		new = current[:column] + string + current[column:]
 		self.lines.insert(row, new)
 
+	def delete(self, cursor):
+		row, column = cursor.row, cursor.column
+		if (row, column) < (self.bottom, len(self[row])):
+			current = self.lines.pop(row)
+			if column < len(self[row]):
+				new = current[:column] + current[column + 1:]
+				self.lines.insert(row, new)
+			else:
+				next = self.lines.pop(row)
+				new = current + next
+				self.lines.insert(row, new)
+
 	def split(self, cursor):
 		row, column = cursor.row, cursor.column
 		current = self.lines.pop(row)
@@ -124,13 +140,22 @@ def right(window, buffer, cursor):
 	window.horizontal_scroll(cursor)
 
 
+def left(window, buffer, cursor):
+	cursor.left(buffer)
+	window.down(buffer, cursor)
+	window.horizontal_scroll(cursor)
+
+
 def main(stdscr):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("filename") # no argument means empty
 	args = parser.parse_args()
-
-	with open(args.filename) as f:
-		buffer = Buffer(f.read().splitlines())
+	filepath = Path(args.filename)
+	try:
+		with open(filepath, 'r') as f:
+			buffer = Buffer(f.read().splitlines())
+	except:
+		buffer = Buffer([''])
 
 	window = Window(curses.LINES - 1, curses.COLS - 1)
 	cursor = Cursor()
@@ -148,7 +173,8 @@ def main(stdscr):
 		key = stdscr.getkey() # self explanatory but
 		# it will be the menu to add functionality based
 		# on the key press
-		if key == chr(0x18) :
+
+		if key == '\x18':
 			sys.exit(0)
 
 		elif key == 'KEY_UP':
@@ -172,6 +198,18 @@ def main(stdscr):
 		elif key == '\n':
 			buffer.split(cursor)
 			right(window, buffer, cursor)
+
+		elif key in ("KEY_DC", "\x04"):
+			buffer.delete(cursor)
+
+		elif key in ("KEY_BACKSPACE", "\x7f"):
+			if (cursor.row, cursor.column) > (0,0):
+				left(window, buffer, cursor)
+				buffer.delete(cursor)
+
+		elif key == '\x01':
+			with open(filepath, 'w') as f:
+				f.write('\n'.join(buffer.lines))
 
 		else:
 			buffer.insert(cursor, key)
