@@ -74,6 +74,10 @@ class Window:
 	def translate(self, cursor):
 		return cursor.row - self.row, cursor.column - self.column
 
+	def horizontal_scroll(self, cursor, left_margin=5, right_margin=2):
+		n_pages = cursor.column // (self.n_columns - right_margin)
+		self.column = max(n_pages * self.n_columns - right_margin - left_margin, 0)
+
 	@property
 	def bottom(self):
 		return self.row + self.n_rows - 1
@@ -99,7 +103,12 @@ def main(stdscr):
 	while True:
 		stdscr.erase()
 		for row, line in enumerate(buffer[window.row:window.row + window.n_rows]):
+			if row == cursor.row - window.row and window.column > 0:
+				line = '<<' + line[window.column + 1]
+			if len(line) > window.n_columns:
+				line = line[:window.n_columns - 1] + '>>'
 			stdscr.addstr(row, 0, line)
+
 		stdscr.move(*window.translate(cursor))
 
 		key = stdscr.getkey() # self explanatory but
@@ -111,18 +120,22 @@ def main(stdscr):
 		elif key == 'KEY_UP':
 			cursor.up(buffer)
 			window.up(cursor)
+			window.horizontal_scroll(cursor)
 
 		elif key == 'KEY_DOWN':
 			cursor.down(buffer)
 			window.down(buffer, cursor)
+			window.horizontal_scroll(cursor)
 
 		elif key == 'KEY_LEFT':
 			cursor.left(buffer)
 			window.up(cursor)
+			window.horizontal_scroll(cursor)
 
 		elif key == 'KEY_RIGHT':
 			cursor.right(buffer)
 			window.down(buffer, cursor)
+			window.horizontal_scroll(cursor)
 
 if __name__ == '__main__':
 	curses.wrapper(main) # calls the function and shows exceptions
