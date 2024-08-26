@@ -148,7 +148,7 @@ def main(stdscr):
 		key = stdscr.getkey() # self explanatory but
 		# it will be the menu to add functionality based
 		# on the key press
-		if key == 'q':
+		if key == chr(0x18) :
 			sys.exit(0)
 
 		elif key == 'KEY_UP':
