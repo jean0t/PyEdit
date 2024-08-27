@@ -1,5 +1,4 @@
 # PyEdit - A Simple Python CLI Text Editor
-=============================================
 
 ## License
 GPL-3.0
@@ -38,3 +37,6 @@ PyEdit is open-source and licensed under the GPL-3.0. If you'd like to contribut
 
 ## Note
 This project is still in its early stages, and there may be bugs or issues. If you encounter any problems, please report them on the GitHub issue tracker. 🐛
+  
+## Known Problems
+-  Delete doesn't work in lines that didn't existed in the loaded file
