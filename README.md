@@ -19,10 +19,10 @@ PyEdit is a basic command-line text editor written in Python. It allows you to l
 
 ## Getting Started
 ### Clone the repository
-git clone https://github.com/jean0t/pyedit.git
+`git clone https://github.com/jean0t/pyedit.git`
 
 ### Run the editor
-python editor_cli.py
+`python editor_cli.py`
 
 ## Usage
 * Load a file: editor_cli.py file.txt
